@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:17.4
+    container_name: postgres_tp
+    networks:
+      - tp_network
+    env_file:
+      - ./.env
+    ports:
+      - "${DB_OUT_PORT}:5432"
+    hostname: ${DB_HOST}
+    volumes:
+      - ./db_dumps:/dump/
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    
+  backend:
+    build:
+      dockerfile: ./Dockerfile
+    container_name: python_tp
+    command: uvicorn src.main:app --host 0.0.0.0 --port $PORT --workers 1 --reload
+    depends_on:
+      - db
+    networks:
+      - tp_network
+    env_file:
+      - ./.env
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ./:/srv
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://0.0.0.0:${PORT}/docs || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tp_network:
+    name: tp_network
+    driver: bridge
+
+  
+
