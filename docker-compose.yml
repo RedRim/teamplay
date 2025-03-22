@@ -16,9 +16,9 @@ services:
     
   backend:
     build:
-      dockerfile: ./Dockerfile
+      context: .
     container_name: python_tp
-    command: uvicorn src.main:app --host 0.0.0.0 --port $PORT --workers 1 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port $PORT_BACK --workers 1 --reload
     depends_on:
       - db
     networks:
@@ -26,16 +26,29 @@ services:
     env_file:
       - ./.env
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT_BACK}:${PORT_BACK}"
     volumes:
       - ./:/srv
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://0.0.0.0:${PORT}/docs || exit 1"]
-      interval: 15s
+      test: ["CMD-SHELL", "curl -f http://0.0.0.0:${PORT_BACK}/docs || exit 1"]
+      interval: 5s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./front
+    container_name: vue_tp
+    command: npm run serve -- --port $PORT_FRONT
+    env_file:
+      - ./.env
+    ports:
+      - "${PORT_FRONT}:${PORT_FRONT}"
+    networks:
+      - tp_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

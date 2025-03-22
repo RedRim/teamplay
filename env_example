@@ -1,0 +1,10 @@
+PORT_BACK=7777
+PORT_FRONT=3000
+NODE_ENV=development
+
+# База данных
+DB_OUT_PORT=8432
+DB_HOST=database_tp
+POSTGRES_DB=db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
