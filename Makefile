@@ -6,6 +6,7 @@ NAME = backend
 EXEC = $(DOCKER_COMP) exec $(NAME)
 
 POSTGRES_CONT = $(DOCKER_COMP) exec db
+BACKEND_CONT = $(DOCKER_COMP) exec backend
 
 build:
 	$(DOCKER_COMP) build --pull --no-cache
@@ -32,3 +33,20 @@ upload-dump:
 	@$(POSTGRES_CONT) psql -U postgres -c "CREATE DATABASE $(database_name);"
 	@echo "Applying $(name) dump..."
 	@$(POSTGRES_CONT) bash -c "pg_restore -e -v -U postgres -Fc --no-owner --no-privileges -d $(database_name) /dump/$(name)"
+
+
+# ---------- Alembic MIGRATIONS ----------
+init-alembic:
+	@$(BACKEND_CONT) alembic init -t async migration
+
+makemigrations:
+	@$(BACKEND_CONT) alembic revision --autogenerate -m $(name)
+
+migrate:
+	@$(BACKEND_CONT) alembic upgrade head
+
+downgrade:
+	@$(BACKEND_CONT) alembic downgrade $(name)
+
+alembic-merge:
+	@$(BACKEND_CONT) alembic merge heads -m ${name}
