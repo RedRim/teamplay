@@ -16,7 +16,7 @@ class BaseModel(SQLModel):
     Базовая модель
     """
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(primary_key=True, default=None)
 
 
 class RoleUserModel(BaseModel):

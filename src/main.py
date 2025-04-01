@@ -1,13 +1,7 @@
 from fastapi import FastAPI
-import uvicorn
+
+from src.auth.routers import auth_router
 
 app = FastAPI()
 
-@app.get("/users")
-async def get_users():
-    return [
-        {
-            "id": 1,
-            "name": "goida"
-        }
-    ]
+app.include_router(auth_router)
