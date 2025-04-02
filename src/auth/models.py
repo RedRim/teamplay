@@ -28,12 +28,10 @@ class UserBase(BaseModel):
 
     username: str
     password: str
-    steam_username: str | None
-    first_name: str | None
-    last_name: str | None
-    email: EmailStr | None
-
-    profile_id: int | None = Field(default=None, foreign_key="profile.id")
+    steam_username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
 
 
 class User(UserBase, table=True):
@@ -43,7 +41,6 @@ class User(UserBase, table=True):
 
     __tablename__ = "user"
 
-    profile: Optional["Profile"] = Relationship(back_populates="user")
     groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroupLink)
 
 
@@ -80,9 +77,9 @@ class ProfileBase(BaseModel):
     Базовая модель профиля
     """
 
-    age: int | None
-    city: str | None
-    country: str | None
+    age: int | None = None
+    city: str | None = None
+    country: str | None = None
     user_type: UserType | None = Field(default=UserType.USER)
 
     user_id: int | None = Field(foreign_key="user.id", default=None)
@@ -122,3 +119,24 @@ class Group(GroupBase, table=True):
 
     users: list[User] = Relationship(back_populates="groups", link_model=UserGroupLink)
 
+class PostBase(DomainModel):
+    """
+    Базовая модель постов
+    """
+
+    text: str | None = None
+    photo_path: str | None = None
+
+    author_id: int | None = Field(foreign_key="user.id", default=None)
+    group_id: int | None = Field(foreign_key="group.id", default=None)
+    # team_id: int | None = Field(foreign_key="team.id", default=None) TODO
+
+
+class Post(PostBase, table=True):
+    """
+    Модель постов
+    """
+
+    author: User = Relationship(back_populates="posts")
+    group: Group | None = Relationship(back_populates="posts")
+    # team: Team | None = Relationship(back_populates="posts")
