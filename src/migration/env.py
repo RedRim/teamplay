@@ -10,12 +10,13 @@ from alembic import context
 
 from core.models import DATABASE_URL
 from auth.models import (
+    UserGroupLink,
     User,
-    # Group,
-    # UserGroupLink,
-    Post
+    FriendsLink,
+    Profile,
+    Group,
+    Post,
 )
-from auth.test_models import Hero, Team
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)

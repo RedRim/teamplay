@@ -1,39 +1,15 @@
+from typing import Union
 from fastapi import APIRouter, HTTPException
 
 from src.core.models import async_session_maker
-from .models import UserBase, User
-from .test_models import Hero, Team
+from .models import (
+    UserBase,
+    User,
+    Profile,
+) 
 from sqlmodel import select
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
-
-@auth_router.get("/heroes", response_model=list[Hero])
-async def get_heroes():
-    async with async_session_maker() as session:
-        query = select(Hero)
-        results = await session.exec(query)
-        instances = results.all()
-        print('hero')
-        return instances
-    
-@auth_router.post("/heroes/create", response_model=Hero)
-async def create_hero(data: Hero):
-    async with async_session_maker() as session:
-        print(data.model_dump())
-        hero = Hero(**data.model_dump())
-        # profile = Profile()
-        session.add(hero)
-        print('user before commit')
-        print(hero)
-        await session.commit()
-        print('user after commit')
-        print(hero)
-        await session.refresh(hero)
-        print('user after refresh')
-        print(hero)
-
-        return hero
-    
 
 
 @auth_router.post("/user/create", response_model=User)
@@ -41,16 +17,10 @@ async def create_user(data: UserBase):
     async with async_session_maker() as session:
         print(data.model_dump())
         user = User(**data.model_dump())
-        # profile = Profile()
+        profile = Profile(user=user)
         session.add(user)
-        print('user before commit')
-        print(user)
+        session.add(profile)
         await session.commit()
-        print('user after commit')
-        print(user)
-        await session.refresh(user)
-        print('user after refresh')
-        print(user)
 
         return user
 
@@ -65,18 +35,20 @@ async def get_user():
         return instances
     
 
-@auth_router.get("/user/{id}", response_model=User)
+@auth_router.get("/user/{id}", response_model=Union[User, None])
 async def get_user(id: int):
     model = User
     async with async_session_maker() as session:
         query = select(model).where(model.id == id)
         result = await session.exec(query)
-        instance = result.one()
+        instance = result.one_or_none()
+        if instance is None:
+            raise HTTPException(status_code=404, detail=f"Не найдено записи в таблице {model.__name__} с {id=}")
 
         return instance
 
 
-@auth_router.patch("/user/{id}", response_model=User)
+@auth_router.patch("/user/{id}", response_model=Union[User, None])
 async def update_user(id: int, data: UserBase):
     model = User
     async with async_session_maker() as session:
@@ -84,7 +56,7 @@ async def update_user(id: int, data: UserBase):
         result = await session.exec(query)
         instance = result.one_or_none()
         if instance is None:
-            raise HTTPException(f"Не найдено записи в таблице {model.__class__.__name__} с {id=}")
+            raise HTTPException(status_code=404, detail=f"Не найдено записи в таблице {model.__name__} с {id=}")
         test = data.model_dump(exclude_unset=False)
         test_2 = data.model_dump(exclude_unset=True)
         print(test)
@@ -95,7 +67,6 @@ async def update_user(id: int, data: UserBase):
         
         session.add(instance)
         session.commit()
-        session.refresh()
 
         return instance
     
@@ -107,9 +78,13 @@ async def delete_user(id: int):
         result = await session.exec(query)
         instance = result.one_or_none()
         if instance is None:
-            raise HTTPException(f"Не найдено записи в таблице {model.__class__.__name__} c {id=}")
-        
+            raise HTTPException(status_code=404, detail=f"Не найдено записи в таблице {model.__name__} c {id=}")
+        profile_query = select(Profile).where(Profile.user_id==instance.id)
+        profile = await session.exec(profile_query)
+        profile_instance = profile.one_or_none()
+        if profile_instance:
+            await session.delete(profile_instance)
         await session.delete(instance)
         await session.commit()
 
-        return {"success": f"Запись {model.__class__.__name__} c {id=} удалена"}
+        return {"success": f"Запись {model.__name__} c {id=} удалена"}

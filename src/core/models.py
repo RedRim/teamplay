@@ -24,7 +24,7 @@ class RoleUserModel(BaseModel):
     Поля пользователя создавшего модель
     """
 
-    created_by_id: int | None = Field(foreign_key="uuser.id")
+    created_by_id: int | None = Field(foreign_key="user.id")
 
 
 class TimestampedModel(BaseModel):
