@@ -10,15 +10,15 @@ from typing import Optional
 
 from src.core.models import BaseModel, DomainModel
 
-class UserGroupLink(BaseModel, table=True):
-    """
-    Связь пользователей с группами
-    """
+# class UserGroupLink(BaseModel, table=True):
+#     """
+#     Связь пользователей с группами
+#     """
 
-    __tablename__ = "user_group_link"
+#     __tablename__ = "user_group_link"
 
-    user_id: int = Field(foreign_key="user.id", primary_key=True)
-    group_id: int = Field(foreign_key="group.id", primary_key=True)
+#     user_id: int = Field(foreign_key="user.id", primary_key=True)
+#     group_id: int = Field(foreign_key="group.id", primary_key=True)
 
 
 class UserBase(BaseModel):
@@ -39,85 +39,91 @@ class User(UserBase, table=True):
     Модель пользователя
     """
 
-    __tablename__ = "user"
+    __tablename__ = "uuser"
 
-    groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroupLink)
+    username: str
+    password: str
+    steam_username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
 
-
-class UserType(int, Enum):
-    """
-    Тип пользователя
-    """
-
-    USER = 0
-    PRO = 1
-    MANAGER = 2
-    ADMIN = 3
+    # groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroupLink)
+    # profile: "Profile" = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
+    posts: list["Post"] = Relationship(back_populates="author")
 
 
-class FriendsLink(BaseModel, table=True):
-    """
-    Модель связи друзей
-    """
+# class UserType(int, Enum):
+#     """
+#     Тип пользователя
+#     """
 
-    __tablename__ = "friendslink"
-
-    user_1_id: int = Field(foreign_key="profile.id", default=None, primary_key=True)
-    user_2_id: int = Field(foreign_key="profile.id", default=None, primary_key=True)
-
-    __table_args__ = (
-        CheckConstraint("user_1_id != user_2_id", name="check_not_self_freindship"),
-        UniqueConstraint("user_1_id", "user_2_id", name="unique_user_pair_freindship"),
-        UniqueConstraint("user_2_id", "user_1_id", name="unique_user_pair_freindship_reverse")
-    )
+#     USER = 0
+#     PRO = 1
+#     MANAGER = 2
+#     ADMIN = 3
 
 
-class ProfileBase(BaseModel):
-    """
-    Базовая модель профиля
-    """
 
-    age: int | None = None
-    city: str | None = None
-    country: str | None = None
-    user_type: UserType | None = Field(default=UserType.USER)
+# class FriendsLink(BaseModel, table=True):
+#     """
+#     Модель связи друзей
+#     """
 
-    user_id: int | None = Field(foreign_key="user.id", default=None)
+#     __tablename__ = "friendslink"
 
+#     user_id: int | None = Field(foreign_key="user.id", default=None, primary_key=True)
+#     friend_id: int | None = Field(foreign_key="user.id", default=None, primary_key=True)
 
-class Profile(ProfileBase, table=True):
-    """
-    Модель профиля
-    """
-
-    __tablename__ = "profile"
-
-    user: User = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="profile"
-    )
-    friends: list["Profile"] = Relationship(
-        back_populates="friends",
-        link_model=FriendsLink
-    )
+#     __table_args__ = (
+#         CheckConstraint("user_id != friend_id", name="check_not_self_friendship"),
+#         UniqueConstraint("user_id", "friend_id", name="unique_user_pair_friendship"),
+#         UniqueConstraint("friend_id", "user_id", name="unique_user_pair_friendship_reverse")
+#     )
 
 
-class GroupBase(DomainModel):
-    """
-    Базовая модель группы
-    """
+# class ProfileBase(BaseModel):
+#     """
+#     Базовая модель профиля
+#     """
 
-    name: str
+#     age: int | None = None
+#     city: str | None = None
+#     country: str | None = None
+#     user_type: UserType | None = Field(default=UserType.USER)
+
+#     user_id: int | None = Field(foreign_key="user.id", default=None)
 
 
-class Group(GroupBase, table=True):
-    """
-    Модель группы
-    """
+# class Profile(ProfileBase, table=True):
+#     """
+#     Модель профиля
+#     """
 
-    __tablename__ = "group"
+#     __tablename__ = "profile"
 
-    users: list[User] = Relationship(back_populates="groups", link_model=UserGroupLink)
+#     user: User = Relationship(
+#         back_populates="profile",
+#         sa_relationship_kwargs={"uselist": False},
+#     )
+
+
+# class GroupBase(DomainModel):
+#     """
+#     Базовая модель группы
+#     """
+
+#     name: str
+
+
+# class Group(GroupBase, table=True):
+#     """
+#     Модель группы
+#     """
+
+#     __tablename__ = "group"
+
+#     users: list[User] = Relationship(back_populates="groups", link_model=UserGroupLink)
 
 class PostBase(DomainModel):
     """
@@ -127,8 +133,7 @@ class PostBase(DomainModel):
     text: str | None = None
     photo_path: str | None = None
 
-    author_id: int | None = Field(foreign_key="user.id", default=None)
-    group_id: int | None = Field(foreign_key="group.id", default=None)
+    # group_id: int | None = Field(foreign_key="group.id", default=None)
     # team_id: int | None = Field(foreign_key="team.id", default=None) TODO
 
 
@@ -137,6 +142,6 @@ class Post(PostBase, table=True):
     Модель постов
     """
 
-    author: User = Relationship(back_populates="posts")
-    group: Group | None = Relationship(back_populates="posts")
+    created_by: User | None = Relationship(back_populates="posts")
+    # group: Group | None = Relationship(back_populates="posts")
     # team: Team | None = Relationship(back_populates="posts")

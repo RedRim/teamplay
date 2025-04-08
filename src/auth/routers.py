@@ -1,10 +1,39 @@
 from fastapi import APIRouter, HTTPException
 
 from src.core.models import async_session_maker
-from .models import UserBase, User, Profile
+from .models import UserBase, User
+from .test_models import Hero, Team
 from sqlmodel import select
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
+
+@auth_router.get("/heroes", response_model=list[Hero])
+async def get_heroes():
+    async with async_session_maker() as session:
+        query = select(Hero)
+        results = await session.exec(query)
+        instances = results.all()
+        print('hero')
+        return instances
+    
+@auth_router.post("/heroes/create", response_model=Hero)
+async def create_hero(data: Hero):
+    async with async_session_maker() as session:
+        print(data.model_dump())
+        hero = Hero(**data.model_dump())
+        # profile = Profile()
+        session.add(hero)
+        print('user before commit')
+        print(hero)
+        await session.commit()
+        print('user after commit')
+        print(hero)
+        await session.refresh(hero)
+        print('user after refresh')
+        print(hero)
+
+        return hero
+    
 
 
 @auth_router.post("/user/create", response_model=User)
@@ -19,14 +48,14 @@ async def create_user(data: UserBase):
         await session.commit()
         print('user after commit')
         print(user)
-        await session.refresh()
+        await session.refresh(user)
         print('user after refresh')
         print(user)
 
         return user
 
 
-@auth_router.get("/user", response_model=list[User])
+@auth_router.get("/user", response_model=list[UserBase])
 async def get_user():
     async with async_session_maker() as session:
         query = select(User)
