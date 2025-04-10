@@ -8,7 +8,7 @@ from pydantic import EmailStr
 from enum import Enum
 from typing import Optional
 
-from src.core.models import BaseModel, DomainModel
+from core.models import BaseModel, DomainModel
 
 class UserGroupLink(BaseModel, table=True):
     """
