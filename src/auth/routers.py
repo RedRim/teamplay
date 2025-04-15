@@ -4,7 +4,7 @@ from fastapi import (
     HTTPException, 
     Depends,
 )
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security import HTTPBasic, HTTPBasicCredentials, HTTPBearer
 from sqlmodel import select
 
 from .schemas import (
@@ -23,8 +23,18 @@ from .utils import (
    create_access_token,
    create_refresh_token, 
 )
+from .validation import (
+    get_current_token_payload,
+    get_current_auth_user,
+)
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+
+http_bearer = HTTPBearer(auto_error=False)
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"], 
+    dependencies=[Depends(http_bearer)],
+)
 
 security = HTTPBasic()
 
@@ -38,8 +48,6 @@ async def register_user(data: RegisterUserSchema):
             raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
         
         data.password = hash_password(data.password)
-        print('password:')
-        print(data)
         user = User(**data.model_dump())
         profile = Profile(user=user)
         session.add_all([user, profile])
@@ -67,6 +75,14 @@ async def login(credentials: HTTPBasicCredentials = Depends(security)):
             access_token=access_token,
             refresh_token=refresh_token,
         )
+    
+@router.get("/me")
+async def get_user_info(
+    payload: dict = Depends(get_current_token_payload),
+    user: User = Depends(get_current_auth_user),
+):
+    iat = payload.get("iat")
+    return payload
 
 
 @router.post("/users/create", response_model=User)

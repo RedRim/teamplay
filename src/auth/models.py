@@ -21,6 +21,16 @@ class UserGroupLink(BaseModel, table=True):
     group_id: int = Field(foreign_key="group.id", primary_key=True)
 
 
+class UserType(int, Enum):
+    """
+    Тип пользователя
+    """
+
+    USER = 0
+    PRO = 1
+    MANAGER = 2
+    ADMIN = 3
+
 class UserBase(BaseModel):
     """
     Базовая модель пользователя
@@ -32,6 +42,7 @@ class UserBase(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
+    user_type: UserType | None = Field(default=UserType.USER)
 
 
 class User(UserBase, table=True):
@@ -44,17 +55,6 @@ class User(UserBase, table=True):
     groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroupLink)
     profile: "Profile" = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
     posts: list["Post"] = Relationship(back_populates="created_by")
-
-
-class UserType(int, Enum):
-    """
-    Тип пользователя
-    """
-
-    USER = 0
-    PRO = 1
-    MANAGER = 2
-    ADMIN = 3
 
 
 class FriendsLink(BaseModel, table=True):
@@ -81,7 +81,6 @@ class ProfileBase(BaseModel):
     age: int | None = None
     city: str | None = None
     country: str | None = None
-    user_type: UserType | None = Field(default=UserType.USER)
 
     user_id: int | None = Field(foreign_key="user.id", default=None)
 

@@ -35,7 +35,6 @@ def decode_jwt(
     algorithm: str = auth_jwt.algorithm
 ):
     decoded = jwt.decode(token, public_key, algorithms=[algorithm])
-    
     return decoded
 
 def hash_password(password: str) -> bytes:
@@ -44,7 +43,6 @@ def hash_password(password: str) -> bytes:
     return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 def validate_password(password: str, hashed_password: bytes) -> bool:
-    print(f'validate {hashed_password}')
     return bcrypt.checkpw(
         password=password.encode(),
         hashed_password=hashed_password.encode('utf-8')
@@ -66,9 +64,9 @@ def create_jwt(
 
 def create_access_token(user: User) -> str:
     jwt_payload = {
-        'sub': user.username,
-        'username': user.username, 
-        'email': user.email,
+        'sub': user.username, 
+        'id': user.id,
+        'user_type': user.user_type,
     }
     return create_jwt(
         token_type=auth_jwt.ACCESS_TOKEN_TYPE, 

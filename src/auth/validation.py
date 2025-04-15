@@ -6,7 +6,7 @@ from sqlmodel import select
 from auth.schemas import UserSchema
 from .models import User
 
-from core import utils as auth_utils
+from .utils import decode_jwt, validate_password
 from core.config import setup_config
 from core.models import async_session_maker
 
@@ -18,13 +18,13 @@ async def get_current_token_payload(
     token: str = Depends(oauth2_scheme),
 ) -> dict:
     try:
-        payload = auth_utils.decode_jwt(
+        payload = decode_jwt(
             token=token,
         )
     except InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"invalid token error: {e}",
+            detail=f"Токен недейсвителен: {e}",
         )
     return payload
 
@@ -37,13 +37,13 @@ async def validate_token_type(
         return True
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=f'invalid token type {current_token_type!r} expected {token_type!r}'
+        detail=f'Неверный тип токена {current_token_type!r}. Ожидалось: {token_type!r}'
     )
 
-async def get_user_by_token_sub(payload: dict) -> UserSchema:
-    username: str | None = payload.get('sub')
+async def get_user_by_token_sub(payload: dict) -> User:
+    user_id: int | None = payload.get('id')
     async with async_session_maker() as session:
-        query = select(User).where(User.username == username)
+        query = select(User).where(User.id == user_id)
         result = await session.exec(query)
         user_instance = result.one_or_none()
         if user_instance is not None:
@@ -51,16 +51,16 @@ async def get_user_by_token_sub(payload: dict) -> UserSchema:
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="token invalid (user not found)",
+        detail="Токен невалиден или пользователь не найден",
     )
     
 
-async def get_auth_user_from_token_of_type(token_type: str):
-    def get_auth_user_from_token(
+def get_auth_user_from_token_of_type(token_type: str):
+    async def get_auth_user_from_token(
         payload: dict = Depends(get_current_token_payload),
     ) -> UserSchema:
         validate_token_type(payload, token_type)
-        return get_user_by_token_sub(payload)
+        return await get_user_by_token_sub(payload)
 
     return get_auth_user_from_token
 
@@ -85,7 +85,7 @@ async def get_current_active_auth_user(
         return user
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="user inactive",
+        detail="Пользователь нективен",
     )
 
 async def validate_auth_user(
@@ -94,7 +94,7 @@ async def validate_auth_user(
 ):
     unauthed_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='invalid username or password'
+        detail='Неверное имя пользователя или пароль'
     )
     async with async_session_maker() as session:
         query = select(User).where(User.username == username)
@@ -104,7 +104,7 @@ async def validate_auth_user(
     if user_instance is None:
         raise unauthed_exc
     
-    if not auth_utils.validate_password(
+    if not validate_password(
         password=password,
         hashed_password=user_instance.password
     ):
