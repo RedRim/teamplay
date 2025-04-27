@@ -48,11 +48,17 @@
 <script>
 import PostForm from "@/components/PostForm";
 import PostList from "@/components/PostList";
+import { useLoginStore } from "@/stores/login";
+
 import axios from "axios";
 export default {
     components: {
         PostForm,
-        PostList
+        PostList,
+    },
+    setup() {
+        const tokens = JSON.parse(localStorage.getItem('userTokens'));
+        return { tokens };
     },
     data() {
         return {
@@ -67,7 +73,7 @@ export default {
             sortOptions: [
                 {value: 'title', name: 'По названию'},
                 {value: 'body', name: 'По описанию'},
-            ]
+            ],
         }
     },
     methods: {
@@ -149,11 +155,9 @@ export default {
         // }
     }
 }
-</script>
+</script> 
 
-<style>
-
-
+<style scoped>
 .app__btns {
     margin: 15px 0;
     display: flex;
