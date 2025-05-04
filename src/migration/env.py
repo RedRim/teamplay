@@ -13,9 +13,16 @@ from auth.models import (
     UserGroupLink,
     User,
     FriendsLink,
-    Profile,
     Group,
     Post,
+)
+
+from cyber.models import (
+    Game,
+    Team,
+    TeamUserLink,
+    TeamEventLink,
+    Event,
 )
 
 config = context.config

@@ -15,7 +15,6 @@ from core.models import async_session_maker
 from .models import (
     UserBase,
     User,
-    Profile,
 ) 
 from .utils import (
    hash_password, 
@@ -49,8 +48,7 @@ async def register_user(data: RegisterUserSchema):
         
         data.password = hash_password(data.password)
         user = User(**data.model_dump())
-        profile = Profile(user=user)
-        session.add_all([user, profile])
+        session.add_all(user)
         await session.commit()
 
         return user
@@ -88,11 +86,8 @@ async def get_user_info(
 @router.post("/users/create", response_model=User)
 async def create_user  (data: UserBase):
     async with async_session_maker() as session:
-        print(data.model_dump())
         user = User(**data.model_dump())
-        profile = Profile(user=user)
         session.add(user)
-        session.add(profile)
         await session.commit()
 
         return user
@@ -152,11 +147,6 @@ async def delete_user(id: int):
         instance = result.one_or_none()
         if instance is None:
             raise HTTPException(status_code=404, detail=f"Не найдено записи в таблице {model.__name__} c {id=}")
-        profile_query = select(Profile).where(Profile.user_id==instance.id)
-        profile = await session.exec(profile_query)
-        profile_instance = profile.one_or_none()
-        if profile_instance:
-            await session.delete(profile_instance)
         await session.delete(instance)
         await session.commit()
 

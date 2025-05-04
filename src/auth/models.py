@@ -6,9 +6,9 @@ from sqlmodel import Field, Relationship, CheckConstraint, UniqueConstraint
 from pydantic import EmailStr
 
 from enum import Enum
-from typing import Optional
 
 from core.models import BaseModel, DomainModel
+from cyber.models import Event, Team, TeamUserLink
 
 class UserGroupLink(BaseModel, table=True):
     """
@@ -42,6 +42,9 @@ class UserBase(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
+    age: int | None = None
+    city: str | None = None
+    country: str | None = None
     user_type: UserType | None = Field(default=UserType.USER)
 
 
@@ -53,8 +56,9 @@ class User(UserBase, table=True):
     __tablename__ = "user"
 
     groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroupLink)
-    profile: "Profile" = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
     posts: list["Post"] = Relationship(back_populates="created_by")
+    created_events: list[Event] = Relationship(back_populates="organizer")
+    teams: list[Team] = Relationship(back_populates="users", link_model=TeamUserLink)
 
 
 class FriendsLink(BaseModel, table=True):
@@ -70,31 +74,6 @@ class FriendsLink(BaseModel, table=True):
     __table_args__ = (
         CheckConstraint("user_id != friend_id", name="check_not_self_friendship"),
         UniqueConstraint("user_id", "friend_id", name="unique_user_pair_friendship"),
-    )
-
-
-class ProfileBase(BaseModel):
-    """
-    Базовая модель профиля
-    """
-
-    age: int | None = None
-    city: str | None = None
-    country: str | None = None
-
-    user_id: int | None = Field(foreign_key="user.id", default=None)
-
-
-class Profile(ProfileBase, table=True):
-    """
-    Модель профиля
-    """
-
-    __tablename__ = "profile"
-
-    user: User | None = Relationship(
-        back_populates="profile",
-        sa_relationship_kwargs={"uselist": False},
     )
 
 
