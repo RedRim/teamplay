@@ -59,7 +59,7 @@ def get_auth_user_from_token_of_type(token_type: str):
     async def get_auth_user_from_token(
         payload: dict = Depends(get_current_token_payload),
     ) -> UserSchema:
-        validate_token_type(payload, token_type)
+        await validate_token_type(payload, token_type)
         return await get_user_by_token_sub(payload)
 
     return get_auth_user_from_token

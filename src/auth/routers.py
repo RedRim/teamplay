@@ -48,7 +48,7 @@ async def register_user(data: RegisterUserSchema):
         
         data.password = hash_password(data.password)
         user = User(**data.model_dump())
-        session.add_all(user)
+        session.add(user)
         await session.commit()
 
         return user
@@ -84,7 +84,7 @@ async def get_user_info(
 
 
 @router.post("/users/create", response_model=User)
-async def create_user  (data: UserBase):
+async def create_user(data: UserBase):
     async with async_session_maker() as session:
         user = User(**data.model_dump())
         session.add(user)
@@ -94,7 +94,7 @@ async def create_user  (data: UserBase):
 
 
 @router.get("/users", response_model=list[UserBase])
-async def get_user():
+async def get_users():
     async with async_session_maker() as session:
         query = select(User)
         results = await session.exec(query)

@@ -37,8 +37,8 @@ class AuthJWT(BaseModel):
     TOKEN_TYPE_FIELD: str = 'type'
     ACCESS_TOKEN_TYPE: str = 'access'
     REFRESH_TOKEN_TYPE: str = 'refresh'
-    access_token_expire: int = 15 # minutes
-    refresh_token_expire_days: int = 60 * 24 * 30
+    access_token_expire: int = 60 * 24 * 30 # 30 days
+    refresh_token_expire_days: int = 60 * 24 * 30 # 30 days
 
 
 class Config:

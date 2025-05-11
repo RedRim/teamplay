@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import DateTime, func
 
 from core.models import BaseModel, DomainModel
@@ -48,7 +48,7 @@ class EventUsersCnt(int, Enum):
 
 class TeamPlayersCnt(int, Enum):
     """
-    Тип пользователя
+    Тип команды (количество игроков в команде)
     """
 
     ONE = 1
@@ -63,7 +63,7 @@ class EventBase(BaseModel):
 
     title: str
     max_players: EventUsersCnt | None = Field(default=EventUsersCnt.SIXTY_FOUR)
-    team_type: TeamPlayersCnt | None = Field(default=EventUsersCnt.ONE)
+    team_type: TeamPlayersCnt | None = Field(default=TeamPlayersCnt.ONE)
     date_from: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
@@ -76,7 +76,7 @@ class EventBase(BaseModel):
     game_id: int | None = Field(foreign_key="game.id", default=None)
 
 
-class TeamEventLink(BaseModel, table=True):
+class TeamEventLink(SQLModel, table=True):
     """
     Связь команд с мероприятиями
     """
@@ -109,7 +109,7 @@ class TeamBase(BaseModel):
     captain_id: int = Field(foreign_key="user.id", default=None)
 
 
-class TeamUserLink(BaseModel, table=True):
+class TeamUserLink(SQLModel, table=True):
     """
     Связь команд с пользователями
     """
