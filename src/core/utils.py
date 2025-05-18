@@ -1,7 +1,10 @@
 from datetime import timedelta, datetime
 import uuid
 import jwt
-
+from fastapi import HTTPException,  status
+from sqlmodel import select
+from core.models import BaseModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 import bcrypt
 
 from .config import setup_config
@@ -47,3 +50,19 @@ def validate_password(password: str, hashed_password: bytes) -> bool:
         password=password.encode(),
         hashed_password=hashed_password.encode('utf-8') 
     )
+
+async def get_object_or_404(model: type[BaseModel], id: int, session: AsyncSession) -> BaseModel:
+    """
+    Получение записи по id
+    Если не найдено - бросает 404
+    """
+
+    query = select(model).where(model.id==id)
+    result = await session.exec(query)
+    instance = result.one_or_none()
+    if instance is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Записи {model.__name__} с {id=} не найдено"
+        )
+    return instance

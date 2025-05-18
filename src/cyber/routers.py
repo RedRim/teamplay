@@ -19,7 +19,9 @@ from cyber.models import (
   TeamEventLink, 
 )
 from core.models import async_session_maker
+from core.utils import get_object_or_404
 from cyber.schemes import TeamUserLinkScheme, EventTeamLinkScheme
+from notifications.models import TeamUserRequest
 
 
 http_bearer = HTTPBearer(auto_error=False)
@@ -34,6 +36,9 @@ async def create_event(
     data: EventBase,
     user: User = Depends(get_current_auth_user),
 ):
+    """
+    Создать турнир
+    """
     async with async_session_maker() as session:
         parameters = data.model_dump()
         parameters['organizer_id'] = user.id
@@ -46,6 +51,9 @@ async def create_event(
 
 @router.get("/events", response_model=list[Event])
 async def get_events():
+    """
+    Список турниров
+    """
     async with async_session_maker() as session:
         query = select(Event)
         results = await session.exec(query)
@@ -58,22 +66,16 @@ async def add_team_event(
     data: EventTeamLinkScheme,
     user: User = Depends(get_current_auth_user),
 ):
+    """
+    Регистрация команды на турнир
+    """
     async with async_session_maker() as session:
-        team = select(Team).where(Team.id==data.team_id)
-        team = await session.exec(team)
-        team: Team | None = team.one_or_none()
-        if team is None:
-            raise HTTPException(status_code=404, detail=f'Команда с id={data.team_id} не найдена')
+        team = get_object_or_404(Team, data.team_id, session)
         
         if user.id != team.captain_id:
             raise HTTPException(status_code=404, detail="Зарегистрировать команду может только капитан")
     
-        event = select(Event).where(Event.id==data.event_id)
-        event = await session.exec(event)
-        event: Event | None = event.one_or_none()
-        if event is None:
-            raise HTTPException(status_code=404, detail=f'Команда с id={data.event_id} не найдена')
-
+        event = get_object_or_404(Event, data.event_id, session)
         team_event_link = TeamEventLink(team_id=team.id, event_id=event.id)
         session.add(team_event_link)
         await session.commit()
@@ -86,6 +88,9 @@ async def create_team(
     data: TeamBase,
     user: User = Depends(get_current_auth_user),
 ):
+    """
+    Создать команду
+    """
     async with async_session_maker() as session:
         parameters = data.model_dump()
         parameters['captain_id'] = user.id
@@ -103,13 +108,12 @@ async def add_users_team(
     data: TeamUserLinkScheme,
     user: User = Depends(get_current_auth_user),
 ):
+    """
+    Пригласить пользователей в команду TODO
+    """
     async with async_session_maker() as session:
         # получение команды
-        team = select(Team).where(Team.id==data.team_id)
-        team = await session.exec(team)
-        team: Team | None = team.one_or_none()
-        if team is None:
-            raise HTTPException(status_code=404, detail=f'Команда с id={data.team_id} не найдена')
+        team = get_object_or_404(Team, data.team_id, session)
         if team.captain_id != user.id:
             raise HTTPException(status_code=404, detail="Новый пользователей может добавлять только капитан")
         
@@ -118,12 +122,13 @@ async def add_users_team(
         new_users = await session.exec(new_users)
         new_users = new_users.all()
 
+        # проверка, что именно все введенные id юзеров есть в базе
         existing_user_ids = {user.id for user in new_users}
         for new_user_id in data.user_ids:
             if new_user_id not in existing_user_ids:
                 raise HTTPException(status_code=404, detail=f'Пользователь с id={new_user_id} не найден')
         new_link_instances = [
-            TeamUserLink(user_id=new_user_id, team_id=team.id) for new_user_id in existing_user_ids
+            TeamUserRequest(user_id=new_user_id, team_id=team.id) for new_user_id in existing_user_ids
         ]
         session.add_all(new_link_instances)
         await session.commit()
@@ -132,6 +137,9 @@ async def add_users_team(
 
 @router.get("/teams", response_model=list[Team])
 async def get_teams():
+    """
+    Список команд
+    """
     async with async_session_maker() as session:
         query = select(Team)
         results = await session.exec(query)

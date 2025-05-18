@@ -25,6 +25,11 @@ from cyber.models import (
     Event,
 )
 
+from notifications.models import (
+    TeamUserRequest,
+    FriendshipRequest,
+)
+
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 

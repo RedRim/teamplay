@@ -15,6 +15,7 @@ from core.models import async_session_maker
 from .models import (
     UserBase,
     User,
+    FriendsLink,
 ) 
 from .utils import (
    hash_password, 
@@ -151,3 +152,15 @@ async def delete_user(id: int):
         await session.commit()
 
         return {"success": f"Запись {model.__name__} c {id=} удалена"}
+    
+@router.get("/users/friends/{user_id}", response_model=list[FriendsLink])
+async def get_outgoing_friendship_requests(user_id: int):
+    """
+    Список друзей пользователя
+    """
+    async with async_session_maker() as session:
+        query = select(FriendsLink).where(FriendsLink.user_id==user_id)
+        results = await session.exec(query)
+        instances = results.all()
+
+        return instances

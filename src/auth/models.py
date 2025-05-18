@@ -2,7 +2,7 @@
 Модели для социального модуля
 """
 
-from sqlmodel import Field, Relationship, CheckConstraint, UniqueConstraint
+from sqlmodel import Field, Relationship, CheckConstraint, UniqueConstraint, SQLModel
 from pydantic import EmailStr
 
 from enum import Enum
@@ -61,7 +61,7 @@ class User(UserBase, table=True):
     teams: list[Team] = Relationship(back_populates="users", link_model=TeamUserLink)
 
 
-class FriendsLink(BaseModel, table=True):
+class FriendsLink(SQLModel, table=True):
     """
     Модель связи друзей
     """
